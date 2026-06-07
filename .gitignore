@@ -42,3 +42,5 @@ next-env.d.ts
 venv/
 .next/
 backend/.env
+__pycache__/
+*.pyc
