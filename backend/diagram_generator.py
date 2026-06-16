@@ -16,18 +16,34 @@ ICON_KEYS = list(ICON_REGISTRY.keys())
 
 DOMAIN_RULES = {
     "ot": """
-- Always separate IT and OT with Industrial DMZ zone
-- Use Purdue Model levels: Level 0 (Field), Level 1 (Machine Control), Level 2 (Supervisory), Level 3 (Site Operations), DMZ, Level 4 (Enterprise IT)
-- Always include: OT Firewall, Jump Server, OPC-UA Gateway in DMZ
-- Always include: SCADA, Historian at Level 2
-- Always include: PLCs at Level 1
-- Always include: Sensors/Actuators at Level 0
-- Connect Level 2 to Level 3 via OPC-UA :4840
-- Connect Level 1 to Level 2 via EtherNet/IP or Profinet
-- No direct connection from Enterprise IT to OT without DMZ
-- Use icon: industrial::OPC-UA Gateway for DMZ crossing
-- Use icon: patterns::DMZ for DMZ zone
-- Use icon: patterns::Purdue Model for reference
+CPwE / PURDUE MODEL STRUCTURE — follow this EXACTLY top to bottom:
+
+ZONE ORDER (top to bottom):
+1. Enterprise Zone (zone id "level_4") — ERP, Email, Active Directory, Enterprise users, Internet access
+2. Industrial DMZ (zone id "dmz") — sits BETWEEN enterprise and industrial. MUST contain: Enterprise-facing Firewall (security::Palo Alto), Industrial-facing Firewall (security::Fortinet), OPC-UA Gateway, Jump Server
+3. Level 3 Site Operations (zone id "level_3") — MES, Site Historian, Application Servers, OT monitoring (security::Claroty or security::Dragos)
+4. Level 2 Supervisory (zone id "level_2") — SCADA, HMI, Area Historian
+5. Level 1 Machine Control (zone id "level_1") — PLCs, Safety PLC
+6. Level 0 Field (zone id "level_0") — Sensors, Actuators, Drives
+
+MANDATORY RULES:
+- ALWAYS include the Enterprise Zone (level_4) at the TOP — never omit it
+- The IDMZ MUST have TWO firewalls: security::Palo Alto facing enterprise, security::Fortinet facing industrial (CPwE two-firewall sandwich)
+- Enterprise (level_4) connects DOWN to the IDMZ; IDMZ connects DOWN to Level 3
+- NEVER connect Enterprise directly to Level 3 — all traffic crosses the IDMZ
+- Use OPC-UA :4840 between Level 3 and Level 2
+- Use EtherNet/IP :44818 or PROFINET between Level 1 and Level 0
+- DO NOT create a "Purdue Model Reference" node — it is NOT a component
+- DO NOT add any pattern or reference nodes — only real architectural components
+- Every zone must have a "type": level_4 -> enterprise, dmz -> dmz, level_3/2/1/0 -> onprem
+
+ICONS:
+- industrial::Opcua Gateway, generic::Jump Server
+- security::Palo Alto, security::Fortinet, security::Claroty, security::Dragos
+- plc::Allen Bradley, plc::Siemens S7
+- scada::Ignition, scada::Wonderware, scada::Osisoft Pi, scada::Hmi
+- industrial::Sensor, industrial::Actuator
+- sap::Erp, generic::Users for enterprise
 """,
     "pharma": """
 - Always include validated system zones per GAMP5

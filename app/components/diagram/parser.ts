@@ -36,7 +36,7 @@ export function parseDiagramToFlow(diagram: any): { nodes: Node[]; edges: Edge[]
   });
 
   const zonePositions: Record<string, { x: number; y: number; width: number; height: number }> = {};
-  const ZONE_ORDER = ["level_0", "level_1", "level_2", "level_3", "dmz", "level_4", "level_4_5", "cloud", "onprem", "enterprise", "safety"];
+  const ZONE_ORDER = ["level_4_5", "level_4", "enterprise", "dmz", "level_3", "level_2", "level_1", "level_0", "cloud", "safety", "onprem"];
 
   const sortedZones = (diagram.zones || []).sort((a: any, b: any) => {
     const ai = ZONE_ORDER.indexOf(a.id);
@@ -46,10 +46,10 @@ export function parseDiagramToFlow(diagram: any): { nodes: Node[]; edges: Edge[]
 
   sortedZones.forEach((zone: any, zIndex: number) => {
     const count = zoneNodeCounts[zone.id] || 1;
-    const width = Math.max(count * 220, 280);
-    const height = 140;
+    const width = Math.max(count * 260, 400);
+    const height = 170;
     const x = 40;
-    const y = 40 + zIndex * 180;
+    const y = 60 + zIndex * 240;
 
     zonePositions[zone.id] = { x, y, width, height };
 
@@ -98,8 +98,8 @@ export function parseDiagramToFlow(diagram: any): { nodes: Node[]; edges: Edge[]
     const idx = zoneNodeIndex[zoneId] || 0;
     zoneNodeIndex[zoneId] = idx + 1;
 
-    const x = zonePos.x + 20 + idx * 220;
-    const y = zonePos.y + 35;
+    const x = zonePos.x + 30 + idx * 250;
+    const y = zonePos.y + 50;
 
     nodes.push({
       id: node.id,

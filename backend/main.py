@@ -18,7 +18,7 @@ app.add_middleware(
 )
 
 from classifier import classify
-from search import search_documents, format_context
+from search import multi_search, search_documents, format_context
 
 @app.get("/health")
 def health():
@@ -116,9 +116,9 @@ async def generate(body: dict):
     domain = classified["app_type"]
 
     # Step 3: RAG search
-    search_query = f"{domain} architecture {' '.join(parsed.get('compliance', []))}"
-    search_res = await search({"query": search_query, "top_k": 8})
-    rag_context = search_res["context"]
+    from search import multi_search, format_context
+    chunks = multi_search(domain, parsed.get("compliance", []), top_k=4)
+    rag_context = format_context(chunks)
 
     # Step 4: generate diagram
     result = generate_diagram(prompt, domain, classified, rag_context)

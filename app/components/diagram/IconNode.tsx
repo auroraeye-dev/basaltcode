@@ -10,33 +10,23 @@ function getIconUrl(iconKey: string): string | null {
   if (parts.length !== 2) return null;
   const [ns, name] = parts;
 
-  const namespaceMap: Record<string, string> = {
-    "aws": `/icons/aws/Icon-package_04302026/Architecture-Service-Icons_04302026`,
-    "cisco": `/icons/cisco/SAFE Icons Library/Design Icons (purple) .33x.38/SVG`,
-    "azure": `/icons/azure/Azure_Public_Service_Icons/Icons`,
-    "sap": `/icons/sap`,
-    "plc": `/icons/plc`,
-    "scada": `/icons/scada`,
-    "industrial": `/icons/industrial`,
-    "generic": `/icons/generic`,
-    "security": `/icons/security`,
-    "hardware": `/icons/hardware`,
-    "patterns": `/icons/patterns`,
-  };
-
-  if (ns === "aws") {
-    const filename = `Arch_${name.replace(/ /g, "-")}_64.svg`;
-    return `${namespaceMap.aws}/Arch_Compute/64/${filename}`;
+  if (["sap","plc","scada","industrial","generic","security","hardware","patterns"].includes(ns)) {
+    const filename = name.toLowerCase().replace(/ /g, "_").replace(/-/g, "_") + ".svg";
+    return `/icons/${ns}/${filename}`;
   }
 
   if (ns === "cisco") {
     const filename = `Design_38_${name}.svg`;
-    return `${namespaceMap.cisco}/${filename}`;
+    return `/icons/cisco/SAFE Icons Library/Design Icons (purple) .33x.38/SVG/${filename}`;
   }
 
-  if (["sap","plc","scada","industrial","generic","security","hardware","patterns"].includes(ns)) {
-    const filename = name.toLowerCase().replace(/ /g, "_").replace(/-/g, "_") + ".svg";
-    return `${namespaceMap[ns]}/${filename}`;
+  if (ns === "aws") {
+    const cleanName = name.replace(/ /g, "-");
+    return `/icons/aws/Icon-package_04302026/Architecture-Service-Icons_04302026/Arch_Compute/64/Arch_${cleanName}_64.svg`;
+  }
+
+  if (ns === "azure") {
+    return null;
   }
 
   return null;
