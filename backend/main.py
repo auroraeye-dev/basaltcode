@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import os
 import json
-
+from diagram_generator import generate_diagram
 load_dotenv()
 
 app = FastAPI()
@@ -101,4 +101,32 @@ async def full_pipeline(body: dict):
         "classified": classified,
         "context_preview": context[:500],
         "message": "Pipeline stages 1-3 complete"
+    }
+@app.post("/generate")
+async def generate(body: dict):
+    prompt = body.get("prompt", "")
+
+    # Step 1: parse
+    parse_res = await parse_prompt({"prompt": prompt})
+    parsed = parse_res["parsed"]
+
+    # Step 2: classify
+    classify_res = await classify_prompt({"parsed": parsed})
+    classified = classify_res["classified"]
+    domain = classified["app_type"]
+
+    # Step 3: RAG search
+    search_query = f"{domain} architecture {' '.join(parsed.get('compliance', []))}"
+    search_res = await search({"query": search_query, "top_k": 8})
+    rag_context = search_res["context"]
+
+    # Step 4: generate diagram
+    result = generate_diagram(prompt, domain, classified, rag_context)
+
+    return {
+        "status": result["status"],
+        "parsed": parsed,
+        "classified": classified,
+        "diagram": result.get("diagram"),
+        "error": result.get("error")
     }
