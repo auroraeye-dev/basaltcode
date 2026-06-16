@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 
-const ArchDiagram = dynamic(() => import("./components/ArchDiagram"), { ssr: false });
+const DiagramCanvas = dynamic(() => import("./components/diagram/DiagramCanvas"), { ssr: false });
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
@@ -17,7 +17,7 @@ export default function Home() {
     setError("");
     setResult(null);
     try {
-      const res = await fetch("http://localhost:8000/pipeline", {
+      const res = await fetch("http://localhost:8000/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
@@ -145,7 +145,7 @@ export default function Home() {
           )}
 
           {result?.classified && (
-            <ArchDiagram classified={result.classified} />
+            <DiagramCanvas diagram={result.diagram} title={result.diagram.title} />
           )}
         </div>
       </div>
