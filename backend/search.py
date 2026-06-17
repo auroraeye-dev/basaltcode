@@ -38,24 +38,31 @@ def search_documents(query: str, top_k: int = 5, domain: str = None) -> list[dic
     return chunks
 
 def multi_search(domain: str, compliance: list, top_k: int = 4) -> list[dict]:
-    """Run several targeted searches and combine — richer context than one vague query."""
+    """Run several targeted searches and combine — richer context than one vague query.
+    Includes a dedicated query for extracted diagram knowledge (the golden reference architectures)."""
     queries = [
-        f"{domain} architecture zones and network segmentation",
-        f"{domain} components devices PLC SCADA controllers servers",
-        f"{domain} protocols ports communication",
-        f"{domain} security controls {' '.join(compliance)}",
+        f"{domain} architecture zones levels network segmentation",
+        f"{domain} components devices PLC SCADA controllers switches servers product names",
+        f"{domain} protocols ports communication OPC-UA EtherNet/IP",
+        f"{domain} security controls firewall DMZ {' '.join(compliance)}",
+        f"{domain} reference architecture diagram topology Stratix Catalyst FactoryTalk Cell Area Zone",
     ]
-
     seen_ids = set()
     combined = []
+    diagram_chunks = []
+
     for q in queries:
         results = search_documents(q, top_k=top_k, domain=domain)
         for r in results:
             rid = r.get("id") or r.get("content", "")[:50]
             if rid not in seen_ids:
                 seen_ids.add(rid)
-                combined.append(r)
-    return combined
+                if r.get("metadata", {}).get("type") == "diagram_description":
+                    diagram_chunks.append(r)
+                else:
+                    combined.append(r)
+
+    return diagram_chunks + combined
 
 def format_context(chunks: list[dict]) -> str:
     context = ""

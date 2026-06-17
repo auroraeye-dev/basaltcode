@@ -1,11 +1,24 @@
 "use client";
 import { Handle, Position } from "@xyflow/react";
-import { useState } from "react";
+import { useState, memo } from "react";
 
-const ICON_BASE = "/icons";
+let REGISTRY: Record<string, string> | null = null;
+let registryLoading = false;
+const listeners: (() => void)[] = [];
+
+function loadRegistry() {
+  if (REGISTRY || registryLoading) return;
+  registryLoading = true;
+  fetch("/icons/registry.json")
+    .then((r) => r.json())
+    .then((data) => { REGISTRY = data; listeners.forEach((fn) => fn()); })
+    .catch(() => { REGISTRY = {}; });
+}
 
 function getIconUrl(iconKey: string): string | null {
   if (!iconKey) return null;
+  if (REGISTRY && REGISTRY[iconKey]) return REGISTRY[iconKey];
+
   const parts = iconKey.split("::");
   if (parts.length !== 2) return null;
   const [ns, name] = parts;
@@ -14,129 +27,92 @@ function getIconUrl(iconKey: string): string | null {
     const filename = name.toLowerCase().replace(/ /g, "_").replace(/-/g, "_") + ".svg";
     return `/icons/${ns}/${filename}`;
   }
-
   if (ns === "cisco") {
-    const filename = `Design_38_${name}.svg`;
-    return `/icons/cisco/SAFE Icons Library/Design Icons (purple) .33x.38/SVG/${filename}`;
+    return `/icons/cisco/SAFE Icons Library/Design Icons (purple) .33x.38/SVG/Design_38_${name}.svg`;
   }
-
-  if (ns === "aws") {
-    const cleanName = name.replace(/ /g, "-");
-    return `/icons/aws/Icon-package_04302026/Architecture-Service-Icons_04302026/Arch_Compute/64/Arch_${cleanName}_64.svg`;
-  }
-
-  if (ns === "azure") {
-    return null;
-  }
-
   return null;
 }
 
-const NS_COLORS: Record<string, string> = {
-  aws: "#FF9900",
-  cisco: "#00BCEB",
-  azure: "#0078D4",
-  sap: "#0070F2",
-  plc: "#CC0000",
-  scada: "#F15A22",
-  industrial: "#00695C",
-  generic: "#37474F",
-  security: "#E2000F",
-  hardware: "#007DB8",
-  patterns: "#1A237E",
+const NS_LABEL: Record<string, string> = {
+  aws: "AWS", cisco: "Cisco", azure: "Azure", sap: "SAP", plc: "PLC",
+  scada: "SCADA", industrial: "Industrial", generic: "Generic",
+  security: "Security", hardware: "Hardware", patterns: "Pattern",
 };
 
-export default function IconNode({ data }: { data: any }) {
+function IconNode({ data, selected }: { data: any; selected?: boolean }) {
+  const [, force] = useState(0);
   const [imgError, setImgError] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [hover, setHover] = useState(false);
 
+  if (!REGISTRY) {
+    loadRegistry();
+    listeners.push(() => force((n) => n + 1));
+  }
+
+  const accent = data.accent || "#8FB4E8";
   const iconUrl = getIconUrl(data.icon || "");
   const ns = (data.icon || "").split("::")[0];
-  const color = NS_COLORS[ns] || "#6B7280";
 
   return (
     <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
-        background: "#111827",
-        border: `1.5px solid ${color}40`,
-        borderTop: `3px solid ${color}`,
+        width: 180,
+        background: "#0F1218",
+        borderWidth: "1px",
+        borderStyle: "solid",
+        borderColor: selected ? accent : "#262B36",
+        borderTopWidth: "2.5px",
+        borderTopColor: accent,
         borderRadius: "10px",
-        padding: "10px 12px",
-        minWidth: "130px",
-        maxWidth: "170px",
-        cursor: "pointer",
+        padding: "11px 12px",
+        boxShadow: selected ? `0 0 0 1px ${accent}, 0 4px 20px rgba(0,0,0,0.5)` : hover ? `0 4px 16px rgba(0,0,0,0.45)` : "0 2px 8px rgba(0,0,0,0.3)",
+        transition: "box-shadow 0.15s, border-color 0.15s",
         position: "relative",
       }}
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
     >
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ background: color, width: 8, height: 8, border: "none" }}
-      />
+      <Handle type="target" position={Position.Top} style={{ background: accent, width: 7, height: 7, border: "none" }} />
+      <Handle type="target" position={Position.Left} style={{ background: accent, width: 7, height: 7, border: "none" }} />
 
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        {iconUrl && !imgError ? (
-          <img
-            src={iconUrl}
-            alt={data.label}
-            width={32}
-            height={32}
-            style={{ flexShrink: 0, borderRadius: "4px" }}
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div style={{
-            width: 32, height: 32, borderRadius: "6px",
-            background: `${color}30`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "14px", fontWeight: 700, color,
-            flexShrink: 0,
-          }}>
-            {(data.label || "?")[0]}
-          </div>
-        )}
-        <div style={{ minWidth: 0 }}>
-          <div style={{
-            fontSize: "11px", fontWeight: 600, color: "#fff",
-            lineHeight: 1.3, wordBreak: "break-word",
-          }}>
-            {data.label}
-          </div>
-          <div style={{ fontSize: "9px", color, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-            {ns}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+          background: imgError || !iconUrl ? `${accent}22` : "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          overflow: "hidden",
+        }}>
+          {iconUrl && !imgError ? (
+            <img src={iconUrl} alt={data.label} width={30} height={30} onError={() => setImgError(true)} />
+          ) : (
+            <span style={{ fontSize: 15, fontWeight: 700, color: accent }}>{(data.label || "?")[0]}</span>
+          )}
+        </div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: "#EAF0F8", lineHeight: 1.25 }}>{data.label}</div>
+          <div style={{ fontSize: 8.5, color: accent, marginTop: 3, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 600 }}>
+            {NS_LABEL[ns] || ns}
           </div>
         </div>
       </div>
 
-      {showTooltip && data.description && (
+      {hover && data.description && (
         <div style={{
-          position: "absolute",
-          bottom: "110%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          background: "#0f0f1a",
-          border: `1px solid ${color}40`,
-          borderRadius: "8px",
-          padding: "8px 10px",
-          width: "220px",
-          fontSize: "10px",
-          color: "#9CA3AF",
-          zIndex: 1000,
-          pointerEvents: "none",
-          lineHeight: 1.5,
+          position: "absolute", bottom: "112%", left: "50%", transform: "translateX(-50%)",
+          background: "#0B0D12", border: `1px solid ${accent}55`, borderRadius: 8,
+          padding: "9px 11px", width: 230, fontSize: 10, color: "#A8B2C2",
+          zIndex: 1000, pointerEvents: "none", lineHeight: 1.55,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
         }}>
-          <div style={{ color: "#fff", fontWeight: 600, marginBottom: "4px" }}>{data.label}</div>
+          <div style={{ color: "#EAF0F8", fontWeight: 600, marginBottom: 4 }}>{data.label}</div>
           {data.description}
         </div>
       )}
 
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={{ background: color, width: 8, height: 8, border: "none" }}
-      />
+      <Handle type="source" position={Position.Bottom} style={{ background: accent, width: 7, height: 7, border: "none" }} />
+      <Handle type="source" position={Position.Right} style={{ background: accent, width: 7, height: 7, border: "none" }} />
     </div>
   );
 }
+
+export default memo(IconNode);
