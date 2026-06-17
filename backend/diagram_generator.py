@@ -87,16 +87,24 @@ ICONS:
 }
 
 SYSTEM_PROMPT = """You are an expert industrial and enterprise architecture designer.
-Your job is to generate architecture diagrams as structured JSON.
+Your job is to generate architecture diagrams as structured JSON, GROUNDED in the reference documents provided.
+
+CRITICAL GROUNDING RULES:
+- The REFERENCE CONTEXT contains real architecture diagrams and specifications extracted from authoritative standards documents (CPwE, NIST, IEC 62443, Cisco, etc.)
+- You MUST prefer component names, products, zone structures, protocols, and topology found in the REFERENCE CONTEXT over your own general knowledge
+- When the reference context names a specific product (e.g. "Cisco Stratix 5700", "Allen-Bradley ControlLogix", "FactoryTalk"), USE THAT EXACT NAME
+- When the reference context shows a zone/level structure, MIRROR that structure
+- When the reference context labels protocols/ports, USE those exact labels
+- Only fall back to general knowledge for components genuinely not covered by the references
 
 You have access to {icon_count} icons. Use ONLY these icon keys (pick the most appropriate):
 {icon_sample}
 
 RULES:
 1. Every node MUST have an icon key from the list above
-2. Use real product names from the domain (Ignition SCADA, OSIsoft PI, Allen-Bradley PLC etc)
-3. Group nodes into zones/groups that make architectural sense
-4. Every edge must have a label showing the protocol or relationship
+2. Prefer real product names from the REFERENCE CONTEXT, then domain knowledge
+3. Group nodes into zones that match the reference architecture structure
+4. Every edge must have a label showing the protocol or relationship (use reference protocols)
 5. Follow the domain rules provided exactly
 6. Output ONLY valid JSON, no explanation, no markdown
 
@@ -109,7 +117,7 @@ OUTPUT FORMAT:
       "label": "Component Name",
       "icon": "namespace::IconName",
       "zone": "zone_id",
-      "description": "What this component does and why it is here"
+      "description": "What this does, why it is here, and which standard/document supports it"
     }}
   ],
   "edges": [
@@ -157,25 +165,31 @@ def generate_diagram(prompt: str, domain: str, classified: dict, rag_context: st
         icon_sample=icon_sample
     )
 
-    user_message = f"""Generate an architecture diagram for:
-{prompt}
+    user_message = f"""REFERENCE CONTEXT — real architecture knowledge extracted from authoritative standards documents and their diagrams. Build the architecture from THIS:
+========================================================
+{rag_context}
+========================================================
+
+Now generate an architecture diagram for this request:
+"{prompt}"
 
 DOMAIN: {domain.upper()}
 CLOUD: {classified.get('cloud', 'aws')}
 COMPLIANCE: {', '.join(classified.get('compliance', []))}
 
-DOMAIN RULES TO FOLLOW:
+DOMAIN STRUCTURE RULES (follow exactly):
 {domain_rules}
 
-REFERENCE CONTEXT FROM STANDARDS DOCUMENTS:
-{rag_context}
-
-Generate a complete, detailed architecture diagram JSON following the rules above.
-Use specific product names. Include all necessary components for a production system.
-Every node must have a real icon key from the list provided."""
+INSTRUCTIONS:
+- Build the architecture primarily from the REFERENCE CONTEXT above — use its exact product names, zone structures, and protocols
+- Fill any gaps with the domain rules and standard industry knowledge
+- Include all components needed for a complete, production-grade system
+- Every node must have a real icon key from the provided list
+- In each node description, note which standard or document supports that choice when possible
+Output ONLY the JSON."""
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user_message}
