@@ -92,10 +92,23 @@ export function parseDiagramToFlow(diagram: any): { nodes: Node[]; edges: Edge[]
   const perRow = Math.max(1, Math.floor((BAND_WIDTH - SIDE_PAD * 2 + NODE_GAP_X) / (NODE_W + NODE_GAP_X)));
   let cursorY = BAND_TOP;
 
-  // 1. UPPER ZONES
+  // 1. UPPER ZONES — known OT levels in Purdue order first, then any other zones (cloud/pharma/general)
+  const TYPE_ORDER = ["enterprise", "cloud", "dmz", "onprem", "safety", "default"];
+  const lowerSet = new Set(LOWER_LEVELS);
   const upperZones = (diagram.zones || [])
-    .filter((z: any) => UPPER_ORDER.includes(z.id))
-    .sort((a: any, b: any) => UPPER_ORDER.indexOf(a.id) - UPPER_ORDER.indexOf(b.id));
+    .filter((z: any) => !lowerSet.has(z.id))   // exclude level_2/1/0 (handled by cells/fallback)
+    .sort((a: any, b: any) => {
+      const ai = UPPER_ORDER.indexOf(a.id);
+      const bi = UPPER_ORDER.indexOf(b.id);
+      // both are known OT zones -> Purdue order
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      // known OT zones come before unknown
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
+      // neither known -> order by type
+      const at = TYPE_ORDER.indexOf(a.type); const bt = TYPE_ORDER.indexOf(b.type);
+      return (at === -1 ? 99 : at) - (bt === -1 ? 99 : bt);
+    });
 
   upperZones.forEach((zone: any) => {
     const zNodes = (nodesByZone[zone.id] || []).filter((n: any) => !cellNodeIds.has(n.id));
