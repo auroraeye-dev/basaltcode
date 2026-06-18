@@ -144,7 +144,7 @@ export default function Home() {
             </div>
           )}
 
-          {result?.classified && (
+          {result?.diagram && (
             <DiagramCanvas diagram={result.diagram} title={result.diagram.title} />
           )}
         </div>

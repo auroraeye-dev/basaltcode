@@ -97,6 +97,7 @@ export function parseDiagramToFlow(diagram: any): { nodes: Node[]; edges: Edge[]
   const lowerSet = new Set(LOWER_LEVELS);
   const upperZones = (diagram.zones || [])
     .filter((z: any) => !lowerSet.has(z.id))   // exclude level_2/1/0 (handled by cells/fallback)
+    .filter((z: any) => !String(z.id).startsWith("cell"))  // cells handled separately, never as bands
     .sort((a: any, b: any) => {
       const ai = UPPER_ORDER.indexOf(a.id);
       const bi = UPPER_ORDER.indexOf(b.id);

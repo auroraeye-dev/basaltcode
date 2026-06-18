@@ -16,34 +16,27 @@ ICON_KEYS = list(ICON_REGISTRY.keys())
 
 DOMAIN_RULES = {
     "ot": """
-CPwE / PURDUE MODEL STRUCTURE — follow this EXACTLY top to bottom:
+CPwE / PURDUE MODEL — full reference structure. Build ALL these levels top to bottom:
 
-ZONE ORDER (top to bottom):
-1. Enterprise Zone (zone id "level_4") — ERP, Email, Active Directory, Enterprise users, Internet access
-2. Industrial DMZ (zone id "dmz") — sits BETWEEN enterprise and industrial. MUST contain: Enterprise-facing Firewall (security::Palo Alto), Industrial-facing Firewall (security::Fortinet), OPC-UA Gateway, Jump Server
-3. Level 3 Site Operations (zone id "level_3") — MES, Site Historian, Application Servers, OT monitoring (security::Claroty or security::Dragos)
-4. Level 2 Supervisory (zone id "level_2") — SCADA, HMI, Area Historian
-5. Level 1 Machine Control (zone id "level_1") — PLCs, Safety PLC
-6. Level 0 Field (zone id "level_0") — Sensors, Actuators, Drives
+ZONE ORDER (each is a zone; use these exact ids and types):
+1. zone id "level_5", type "enterprise", label "Level 5 — Enterprise Network (Zone: Enterprise)"
+   Components: ERP/SAP (sap::Erp), Corp Email (generic::Email), Active Directory (generic::Active Directory), Enterprise SIEM (security::Splunk), Internet (generic::Internet), Perimeter Firewall (security::Palo Alto)
+2. zone id "level_4", type "enterprise", label "Level 4 — Site Business Planning & Logistics"
+   Components: Production Scheduling (generic::Server), QMS/PLM (sap::Erp), Inventory/WMS (generic::Database)
+3. zone id "dmz", type "dmz", label "Industrial DMZ (IDMZ) — Conduit between Enterprise & Industrial"
+   MUST contain: Enterprise-facing Firewall (security::Palo Alto), Industrial-facing Firewall (security::Fortinet), Patch/WSUS (generic::Server), AV/Defender (security::Sophos), Remote Access Jump (generic::Jump Server), Data Broker/Historian Mirror (scada::Osisoft Pi), Reverse Proxy (generic::Server)
+4. zone id "level_3", type "onprem", label "Level 3 — Site Operations (Industrial Zone)"
+   Components: MES (scada::Ignition), Plant Historian (scada::Osisoft Pi), Engineering Workstation (generic::Server), Asset Inventory / OT Monitoring (security::Claroty), OT SOC/IDS (security::Dragos), Core Switch Stack (cisco::Switch or hardware::Switch)
+5. Levels 2/1/0 -> SPLIT INTO CELLS (see Cell/Area Zones rules)
 
-MANDATORY RULES:
-- ALWAYS include the Enterprise Zone (level_4) at the TOP — never omit it
-- The IDMZ MUST have TWO firewalls: security::Palo Alto facing enterprise, security::Fortinet facing industrial (CPwE two-firewall sandwich)
-- Enterprise (level_4) connects DOWN to the IDMZ; IDMZ connects DOWN to Level 3
-- NEVER connect Enterprise directly to Level 3 — all traffic crosses the IDMZ
-- Use OPC-UA :4840 between Level 3 and Level 2
-- Use EtherNet/IP :44818 or PROFINET between Level 1 and Level 0
-- DO NOT create a "Purdue Model Reference" node — it is NOT a component
-- DO NOT add any pattern or reference nodes — only real architectural components
-- Every zone must have a "type": level_4 -> enterprise, dmz -> dmz, level_3/2/1/0 -> onprem
-
-ICONS:
-- industrial::Opcua Gateway, generic::Jump Server
-- security::Palo Alto, security::Fortinet, security::Claroty, security::Dragos
-- plc::Allen Bradley, plc::Siemens S7
-- scada::Ignition, scada::Wonderware, scada::Osisoft Pi, scada::Hmi
-- industrial::Sensor, industrial::Actuator
-- sap::Erp, generic::Users for enterprise
+MANDATORY:
+- ALWAYS include Level 5 AND Level 4 as SEPARATE zones — never merge them.
+- ALWAYS include Internet + Perimeter Firewall in Level 5 (the outside-world boundary).
+- The IDMZ has the TWO-firewall sandwich (Palo Alto enterprise-facing + Fortinet industrial-facing).
+- Enterprise (5) -> Level 4 -> IDMZ -> Level 3 -> Cells. NEVER skip the IDMZ.
+- Edge labels between zones use conduit terms: "Conduit (FW)", "Enterprise to Site Business", "OPC-UA :4840", "EtherNet/IP :44818".
+- Use OPC-UA :4840 from Level 3 down to cells; EtherNet/IP or PROFINET inside cells.
+- NEVER create a "Purdue Model Reference" node or any pattern/reference node.
 """,
     "pharma": """
 - Always include validated system zones per GAMP5
