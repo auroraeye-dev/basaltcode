@@ -151,6 +151,9 @@ CELL/AREA ZONES (IMPORTANT):
 - When a facility naturally has multiple parallel production areas (automotive: Body Shop / Paint Shop / Final Assembly; FMCG: Mixing / Filling / Packaging; metal: Furnace / Casting / Rolling), split Levels 2/1/0 into CELLS.
 - Each cell is a vertical mini-stack: its own HMI/SCADA (L2), its own PLC (L1), its own field devices (L0).
 - CRITICAL: when you use cells, EVERY node at level_2, level_1, and level_0 MUST be assigned to exactly one cell. Leave NONE unassigned.
+- BALANCE RULE: every cell MUST have the SAME complete vertical stack — do NOT dump most nodes into one cell. Each cell gets: its own HMI or local SCADA (level_2), its own PLC (level_1), its own sensors AND actuators (level_0). If you create 3 cells, you create roughly 3x4 = 12 lower-level nodes, 4 per cell.
+- Do NOT leave any cell with fewer nodes than the others. Body Shop, Paint Shop, and Assembly must each be a full stack.
+- Plant-wide shared systems (one site-wide SCADA, one Area Historian) belong at level_3, NOT inside a single cell and NOT dangling at level_2.
 - Each cell should contain its OWN L2 HMI/SCADA, its OWN L1 PLC, and its OWN L0 field devices. Give each cell a full vertical stack.
 - Example per cell: Body Shop = [L2: HMI, L1: ControlLogix PLC, L0: Weld Robots + Sensors]; Paint Shop = [L2: HMI, L1: PLC, L0: Paint Robots + Booth]; Assembly = [L2: HMI, L1: PLC, L0: Conveyor + Torque Tools].
 - Put each lower-level node in BOTH its zone (level_2/level_1/level_0) AND its cell (via the cells array). Every level_2/1/0 node id must appear in some cell's nodes list.

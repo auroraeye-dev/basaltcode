@@ -102,6 +102,20 @@ export function parseDiagramToFlow(diagram: any): { nodes: Node[]; edges: Edge[]
     cursorY = fullWidthBand(zone, zNodes, cursorY, perRow, nodes);
   });
 
+  // 2a. Shared lower-level nodes not assigned to any cell -> one clean band (above cells)
+  if (hasCells) {
+    const orphans: any[] = [];
+    LOWER_LEVELS.forEach((lvlId) => {
+      (nodesByZone[lvlId] || []).forEach((n: any) => {
+        if (!cellNodeIds.has(n.id)) orphans.push(n);
+      });
+    });
+    if (orphans.length > 0) {
+      const sharedZone = { id: "shared_ot", label: "Shared OT Systems", type: "onprem" };
+      cursorY = fullWidthBand(sharedZone, orphans, cursorY, perRow, nodes);
+    }
+  }
+
   // 2. CELL/AREA ZONES
   if (hasCells) {
     const cellCount = cells.length;
@@ -161,13 +175,7 @@ export function parseDiagramToFlow(diagram: any): { nodes: Node[]; edges: Edge[]
     cursorY += containerH + BAND_GAP;
   }
 
-  // 3. Fallback: any lower-level nodes NOT in cells
-  LOWER_LEVELS.forEach((lvlId) => {
-    const zone = zonesById[lvlId];
-    if (!zone) return;
-    const zNodes = (nodesByZone[lvlId] || []).filter((n: any) => !cellNodeIds.has(n.id));
-    cursorY = fullWidthBand(zone, zNodes, cursorY, perRow, nodes);
-  });
+  // 3. (handled above as Shared OT Systems band)
 
   // Edges
   (diagram.edges || []).forEach((edge: any) => {
