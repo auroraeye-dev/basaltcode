@@ -137,8 +137,27 @@ OUTPUT FORMAT:
       "color": "blue or grey or orange or red or purple",
       "nodes": ["node_id_list"]
     }}
+  ],
+  "cells": [
+    {{
+      "id": "cell_id",
+      "label": "Production Cell Name (e.g. Body Shop, Paint Shop, Packaging Line)",
+      "nodes": ["node_id_list — the L2/L1/L0 nodes belonging to THIS cell"]
+    }}
   ]
-}}"""
+}}
+
+CELL/AREA ZONES (IMPORTANT):
+- When a facility naturally has multiple parallel production areas (automotive: Body Shop / Paint Shop / Final Assembly; FMCG: Mixing / Filling / Packaging; metal: Furnace / Casting / Rolling), split Levels 2/1/0 into CELLS.
+- Each cell is a vertical mini-stack: its own HMI/SCADA (L2), its own PLC (L1), its own field devices (L0).
+- CRITICAL: when you use cells, EVERY node at level_2, level_1, and level_0 MUST be assigned to exactly one cell. Leave NONE unassigned.
+- Each cell should contain its OWN L2 HMI/SCADA, its OWN L1 PLC, and its OWN L0 field devices. Give each cell a full vertical stack.
+- Example per cell: Body Shop = [L2: HMI, L1: ControlLogix PLC, L0: Weld Robots + Sensors]; Paint Shop = [L2: HMI, L1: PLC, L0: Paint Robots + Booth]; Assembly = [L2: HMI, L1: PLC, L0: Conveyor + Torque Tools].
+- Put each lower-level node in BOTH its zone (level_2/level_1/level_0) AND its cell (via the cells array). Every level_2/1/0 node id must appear in some cell's nodes list.
+- Shared supervisory systems (Area Historian, plant-wide SCADA) can stay at level_3 instead — do NOT leave them dangling at level_2 outside a cell.
+- Use job-specific equipment per cell: weld robots in body shop, paint robots in paint shop, conveyors in assembly.
+- If the system has only ONE production area or is a simple network, leave "cells" as an empty array [].
+- Upper levels (Enterprise, DMZ, Level 3) are NEVER split into cells — they stay shared."""
 
 def get_icon_sample(domain: str) -> str:
     relevant_prefixes = {
