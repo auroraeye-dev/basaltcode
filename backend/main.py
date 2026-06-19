@@ -78,6 +78,15 @@ async def search(body: dict):
         "context": context
     }
 
+from clarifier import clarify, merge_answers
+
+@app.post("/clarify")
+async def clarify_endpoint(body: dict):
+    prompt = body.get("prompt", "")
+    if not prompt.strip():
+        return {"status": "ready", "questions": []}
+    return clarify(prompt)
+
 @app.post("/pipeline")
 async def full_pipeline(body: dict):
     prompt = body.get("prompt", "")
@@ -105,6 +114,11 @@ async def full_pipeline(body: dict):
 @app.post("/generate")
 async def generate(body: dict):
     prompt = body.get("prompt", "")
+    # Merge any clarifying Q&A the user provided into the prompt
+    qa_pairs = body.get("clarifications", [])
+    if qa_pairs:
+        from clarifier import merge_answers
+        prompt = merge_answers(prompt, qa_pairs)
 
     # Step 1: parse
     parse_res = await parse_prompt({"prompt": prompt})

@@ -10,17 +10,20 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [clarifying, setClarifying] = useState(false);
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+  const runGenerate = async (clarifications: any[] = []) => {
     setLoading(true);
     setError("");
     setResult(null);
+    setQuestions([]);
     try {
       const res = await fetch("http://localhost:8000/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, clarifications }),
       });
       const data = await res.json();
       setResult(data);
@@ -29,6 +32,37 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+    // If we're already showing questions, this click submits the answers
+    if (questions.length > 0) {
+      const qa = questions.map((q, i) => ({ q: q.q, a: answers[i] || "" }));
+      runGenerate(qa);
+      return;
+    }
+    // Otherwise, first check if clarification is needed
+    setClarifying(true);
+    setError("");
+    try {
+      const res = await fetch("http://localhost:8000/clarify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      if (data.status === "needs_info" && data.questions?.length > 0) {
+        setQuestions(data.questions);
+        setAnswers({});
+        setClarifying(false);
+        return; // stop and show questions
+      }
+    } catch (e) {
+      // if clarify fails, just proceed to generate
+    }
+    setClarifying(false);
+    runGenerate();
   };
 
   return (
@@ -63,10 +97,36 @@ export default function Home() {
             disabled={loading || !prompt.trim()}
             className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-800 disabled:text-gray-600 text-white font-medium py-2.5 rounded-lg transition-colors text-sm"
           >
-            {loading ? "Generating..." : "Generate Architecture"}
+            {loading ? "Generating..." : clarifying ? "Thinking..." : questions.length > 0 ? "Generate with Answers" : "Generate Architecture"}
           </button>
 
           {error && <p className="text-red-400 text-xs">{error}</p>}
+          {questions.length > 0 && (
+            <div className="bg-gray-900 border border-orange-500/40 rounded-lg p-3 space-y-3">
+              <p className="text-orange-400 text-xs uppercase tracking-wider font-medium">
+                A few questions for a better diagram
+              </p>
+              {questions.map((q, i) => (
+                <div key={i} className="space-y-1">
+                  <label className="text-xs text-gray-300 block">{q.q}</label>
+                  {q.why && <p className="text-[10px] text-gray-600">{q.why}</p>}
+                  <input
+                    type="text"
+                    className="w-full bg-gray-950 border border-gray-700 rounded-md p-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-orange-500"
+                    placeholder="Your answer (optional)"
+                    value={answers[i] || ""}
+                    onChange={(e) => setAnswers({ ...answers, [i]: e.target.value })}
+                  />
+                </div>
+              ))}
+              <button
+                onClick={() => runGenerate()}
+                className="text-xs text-gray-500 hover:text-gray-300 underline"
+              >
+                Skip and generate anyway
+              </button>
+            </div>
+          )}
 
           {result?.parsed && (
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-3 text-xs space-y-2">
