@@ -122,6 +122,9 @@ async def generate(body: dict):
 
     # Step 4: generate diagram
     result = generate_diagram(prompt, domain, classified, rag_context)
+    from validator import main_validate
+    if result.get("diagram"):
+        result["diagram"] = main_validate(result["diagram"], domain)
 
     return {
         "status": result["status"],

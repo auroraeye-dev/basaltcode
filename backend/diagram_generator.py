@@ -37,6 +37,18 @@ MANDATORY:
 - Edge labels between zones use conduit terms: "Conduit (FW)", "Enterprise to Site Business", "OPC-UA :4840", "EtherNet/IP :44818".
 - Use OPC-UA :4840 from Level 3 down to cells; EtherNet/IP or PROFINET inside cells.
 - NEVER create a "Purdue Model Reference" node or any pattern/reference node.
+
+
+EDGE & DATA-FLOW RULES (CRITICAL — get the direction right):
+- FIELD FLOW: Sensors send data UP to the PLC. Edges go Sensors -> PLC (label "Sensor Data"), and PLC -> Actuators (label "Control Signal"). NEVER draw PLC -> Sensors as the primary data path.
+- CELL HIERARCHY: PLC <-> HMI (label "Monitoring / Control"). The HMI does NOT sit between PLC and field devices. Vertical order in a cell top to bottom: HMI (L2), PLC (L1), Sensors+Actuators (L0). Data flows Sensors -> PLC -> HMI; commands flow HMI -> PLC -> Actuators.
+- SCADA MASTER: Always include a SCADA Server (scada::Ignition or scada::Wonderware) at Level 2 or 3 that POLLS the PLCs. Edge: SCADA Server -> each cell PLC (label "OPC-UA :4840"). MES and Historian are NOT the SCADA master.
+- OPC-UA TERMINATION: OPC-UA conduits terminate on PLCs, SCADA Servers, or Historians — NEVER on an HMI. Level 3 -> cell connections go to the cell PLC or SCADA, not the HMI.
+- IDMZ ROUTING (no bypass): Enterprise (L5) and L4 traffic must enter the Enterprise-facing Firewall, cross the IDMZ, exit the Industrial-facing Firewall, then reach Level 3. NEVER connect an enterprise/L4 node directly to a Level 3 node. NEVER terminate an L4 node on the perimeter firewall as an endpoint.
+- HISTORIAN REPLICATION: Plant Historian (L3) -> Historian Mirror (IDMZ) labeled "Replication"; Historian Mirror -> enterprise consumer labeled "Read-only". Must not float.
+- REVERSE PROXY: connect what it fronts (Historian web / MES dashboards) -> Reverse Proxy -> enterprise users. Never dangling.
+- OT MONITORING: OT SOC/IDS and Asset Inventory (Claroty/Dragos) get edges from the Core Switch Stack labeled "SPAN / Mirror" so it is clear what they monitor.
+- LABEL EVERY EDGE: OPC-UA :4840, EtherNet/IP :44818, Modbus/TCP, HTTPS, Replication, Sensor Data, Control Signal, SPAN.
 """,
     "pharma": """
 - Always include validated system zones per GAMP5
@@ -69,6 +81,18 @@ MANDATORY:
 - Edge labels between zones use conduit terms: "Conduit (FW)", "Enterprise to Site Business", "OPC-UA :4840", "EtherNet/IP :44818".
 - Use OPC-UA :4840 from Level 3 down to cells; EtherNet/IP or PROFINET inside cells.
 - NEVER create a "Purdue Model Reference" node or any pattern/reference node.
+
+
+EDGE & DATA-FLOW RULES (CRITICAL — get the direction right):
+- FIELD FLOW: Sensors send data UP to the PLC. Edges go Sensors -> PLC (label "Sensor Data"), and PLC -> Actuators (label "Control Signal"). NEVER draw PLC -> Sensors as the primary data path.
+- CELL HIERARCHY: PLC <-> HMI (label "Monitoring / Control"). The HMI does NOT sit between PLC and field devices. Vertical order in a cell top to bottom: HMI (L2), PLC (L1), Sensors+Actuators (L0). Data flows Sensors -> PLC -> HMI; commands flow HMI -> PLC -> Actuators.
+- SCADA MASTER: Always include a SCADA Server (scada::Ignition or scada::Wonderware) at Level 2 or 3 that POLLS the PLCs. Edge: SCADA Server -> each cell PLC (label "OPC-UA :4840"). MES and Historian are NOT the SCADA master.
+- OPC-UA TERMINATION: OPC-UA conduits terminate on PLCs, SCADA Servers, or Historians — NEVER on an HMI. Level 3 -> cell connections go to the cell PLC or SCADA, not the HMI.
+- IDMZ ROUTING (no bypass): Enterprise (L5) and L4 traffic must enter the Enterprise-facing Firewall, cross the IDMZ, exit the Industrial-facing Firewall, then reach Level 3. NEVER connect an enterprise/L4 node directly to a Level 3 node. NEVER terminate an L4 node on the perimeter firewall as an endpoint.
+- HISTORIAN REPLICATION: Plant Historian (L3) -> Historian Mirror (IDMZ) labeled "Replication"; Historian Mirror -> enterprise consumer labeled "Read-only". Must not float.
+- REVERSE PROXY: connect what it fronts (Historian web / MES dashboards) -> Reverse Proxy -> enterprise users. Never dangling.
+- OT MONITORING: OT SOC/IDS and Asset Inventory (Claroty/Dragos) get edges from the Core Switch Stack labeled "SPAN / Mirror" so it is clear what they monitor.
+- LABEL EVERY EDGE: OPC-UA :4840, EtherNet/IP :44818, Modbus/TCP, HTTPS, Replication, Sensor Data, Control Signal, SPAN.
 """,
     "metal": """
 CPwE / PURDUE MODEL — full reference structure. Build ALL these levels top to bottom:
@@ -92,6 +116,18 @@ MANDATORY:
 - Edge labels between zones use conduit terms: "Conduit (FW)", "Enterprise to Site Business", "OPC-UA :4840", "EtherNet/IP :44818".
 - Use OPC-UA :4840 from Level 3 down to cells; EtherNet/IP or PROFINET inside cells.
 - NEVER create a "Purdue Model Reference" node or any pattern/reference node.
+
+
+EDGE & DATA-FLOW RULES (CRITICAL — get the direction right):
+- FIELD FLOW: Sensors send data UP to the PLC. Edges go Sensors -> PLC (label "Sensor Data"), and PLC -> Actuators (label "Control Signal"). NEVER draw PLC -> Sensors as the primary data path.
+- CELL HIERARCHY: PLC <-> HMI (label "Monitoring / Control"). The HMI does NOT sit between PLC and field devices. Vertical order in a cell top to bottom: HMI (L2), PLC (L1), Sensors+Actuators (L0). Data flows Sensors -> PLC -> HMI; commands flow HMI -> PLC -> Actuators.
+- SCADA MASTER: Always include a SCADA Server (scada::Ignition or scada::Wonderware) at Level 2 or 3 that POLLS the PLCs. Edge: SCADA Server -> each cell PLC (label "OPC-UA :4840"). MES and Historian are NOT the SCADA master.
+- OPC-UA TERMINATION: OPC-UA conduits terminate on PLCs, SCADA Servers, or Historians — NEVER on an HMI. Level 3 -> cell connections go to the cell PLC or SCADA, not the HMI.
+- IDMZ ROUTING (no bypass): Enterprise (L5) and L4 traffic must enter the Enterprise-facing Firewall, cross the IDMZ, exit the Industrial-facing Firewall, then reach Level 3. NEVER connect an enterprise/L4 node directly to a Level 3 node. NEVER terminate an L4 node on the perimeter firewall as an endpoint.
+- HISTORIAN REPLICATION: Plant Historian (L3) -> Historian Mirror (IDMZ) labeled "Replication"; Historian Mirror -> enterprise consumer labeled "Read-only". Must not float.
+- REVERSE PROXY: connect what it fronts (Historian web / MES dashboards) -> Reverse Proxy -> enterprise users. Never dangling.
+- OT MONITORING: OT SOC/IDS and Asset Inventory (Claroty/Dragos) get edges from the Core Switch Stack labeled "SPAN / Mirror" so it is clear what they monitor.
+- LABEL EVERY EDGE: OPC-UA :4840, EtherNet/IP :44818, Modbus/TCP, HTTPS, Replication, Sensor Data, Control Signal, SPAN.
 """,
     "scada": """
 CPwE / PURDUE MODEL — full reference structure. Build ALL these levels top to bottom:
@@ -115,6 +151,18 @@ MANDATORY:
 - Edge labels between zones use conduit terms: "Conduit (FW)", "Enterprise to Site Business", "OPC-UA :4840", "EtherNet/IP :44818".
 - Use OPC-UA :4840 from Level 3 down to cells; EtherNet/IP or PROFINET inside cells.
 - NEVER create a "Purdue Model Reference" node or any pattern/reference node.
+
+
+EDGE & DATA-FLOW RULES (CRITICAL — get the direction right):
+- FIELD FLOW: Sensors send data UP to the PLC. Edges go Sensors -> PLC (label "Sensor Data"), and PLC -> Actuators (label "Control Signal"). NEVER draw PLC -> Sensors as the primary data path.
+- CELL HIERARCHY: PLC <-> HMI (label "Monitoring / Control"). The HMI does NOT sit between PLC and field devices. Vertical order in a cell top to bottom: HMI (L2), PLC (L1), Sensors+Actuators (L0). Data flows Sensors -> PLC -> HMI; commands flow HMI -> PLC -> Actuators.
+- SCADA MASTER: Always include a SCADA Server (scada::Ignition or scada::Wonderware) at Level 2 or 3 that POLLS the PLCs. Edge: SCADA Server -> each cell PLC (label "OPC-UA :4840"). MES and Historian are NOT the SCADA master.
+- OPC-UA TERMINATION: OPC-UA conduits terminate on PLCs, SCADA Servers, or Historians — NEVER on an HMI. Level 3 -> cell connections go to the cell PLC or SCADA, not the HMI.
+- IDMZ ROUTING (no bypass): Enterprise (L5) and L4 traffic must enter the Enterprise-facing Firewall, cross the IDMZ, exit the Industrial-facing Firewall, then reach Level 3. NEVER connect an enterprise/L4 node directly to a Level 3 node. NEVER terminate an L4 node on the perimeter firewall as an endpoint.
+- HISTORIAN REPLICATION: Plant Historian (L3) -> Historian Mirror (IDMZ) labeled "Replication"; Historian Mirror -> enterprise consumer labeled "Read-only". Must not float.
+- REVERSE PROXY: connect what it fronts (Historian web / MES dashboards) -> Reverse Proxy -> enterprise users. Never dangling.
+- OT MONITORING: OT SOC/IDS and Asset Inventory (Claroty/Dragos) get edges from the Core Switch Stack labeled "SPAN / Mirror" so it is clear what they monitor.
+- LABEL EVERY EDGE: OPC-UA :4840, EtherNet/IP :44818, Modbus/TCP, HTTPS, Replication, Sensor Data, Control Signal, SPAN.
 """,
     "general": """
 - Standard cloud architecture patterns
